@@ -1,0 +1,61 @@
+{
+  "MLS": {
+    "Controls": {
+      "Title": "Multi-Level Scenes",
+      "StairsTool": "Draw stairs zone (drag a rectangle)",
+      "BuildingTool": "Draw building area (drag a rectangle)",
+      "LevelUp": "View one level up (GM view)",
+      "LevelDown": "View one level down (GM view)",
+      "Build": "Build a multi-level scene from a folder"
+    },
+    "Layer": {
+      "Stairs": "Stairs",
+      "Building": "Building",
+      "DeleteTitle": "Delete zone",
+      "DeleteContent": "Delete this zone ({type})?"
+    },
+    "Stairs": {
+      "Title": "Stairs",
+      "Prompt": "{name} is standing on the stairs. Where to?",
+      "Up": "Go up: {name}",
+      "Down": "Go down: {name}",
+      "Stay": "Stay here",
+      "Moved": "{token} is now on: {name} (level {level})"
+    },
+    "Build": {
+      "Title": "Build multi-level scene",
+      "Hint": "Pick the folder containing the floor scenes. Each scene name must end with a number: 00 = basement, 01 = ground floor, the highest number is the roof.",
+      "FolderLabel": "Scene folder",
+      "Confirm": "Build",
+      "SceneSuffix": "Multi-Level",
+      "NoFolders": "There is no scene folder.",
+      "SkippedNoNumber": "Scene \"{name}\" skipped: its name does not end with a number.",
+      "NeedTwo": "At least 2 scenes with a trailing number are required.",
+      "DuplicateLevel": "Two scenes share the same floor number ({level}).",
+      "DimMismatch": "Warning: the scenes do not all share the same dimensions. The lowest floor's dimensions will be used.",
+      "NoBackground": "Scene \"{name}\" has no background image: no tile was created for that floor.",
+      "Done": "Scene \"{name}\" created with {count} floors. Now draw the stairs and building zones with the module tools."
+    },
+    "Settings": {
+      "FloorHeight": {
+        "Name": "Floor height",
+        "Hint": "Elevation difference (in grid distance units, e.g. feet or meters) between one floor and the next."
+      },
+      "DefaultLevel": {
+        "Name": "Default starting level",
+        "Hint": "Level assigned to newly placed tokens (usually 1 = ground floor, since 00 is the basement)."
+      },
+      "ShowStairsToPlayers": {
+        "Name": "Show stairs to players",
+        "Hint": "If enabled, players see a faint orange outline over stairs zones."
+      }
+    },
+    "Info": {
+      "ViewingLevel": "Now viewing: {name} (level {level})"
+    },
+    "Warn": {
+      "NotComposite": "This is not a multi-level scene. Create one with the \"Build\" tool.",
+      "NoSuchLevel": "Level {level} does not exist in this scene."
+    }
+  }
+}

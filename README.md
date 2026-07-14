@@ -1,0 +1,81 @@
+# Multi-Level Scenes
+
+Modulo per **Foundry VTT v13** che raggruppa più scene di una cartella in un'unica scena multi-livello (multipiano), con zone scale per salire/scendere e logica del tetto per chi è fuori dall'edificio.
+
+*A Foundry VTT v13 module that merges the scenes of a folder into a single multi-level composite scene, with stairs zones and roof logic. English summary at the bottom.*
+
+## Installazione
+
+In Foundry: **Add-on Modules → Install Module** e incolla questo manifest:
+
+```
+https://github.com/LinguardEvergreen/multi-level-scenes/releases/latest/download/module.json
+```
+
+## Come funziona
+
+### 1. Prepara le scene dei piani
+
+Metti in una **cartella di scene** tutte le mappe dei piani di un edificio. Il nome di ogni scena deve **terminare con un numero** che indica il piano:
+
+| Nome scena | Piano |
+|---|---|
+| `Torre 00` | Seminterrato (piano -1) |
+| `Torre 01` | Piano terra (i PG partono da qui) |
+| `Torre 02` | Piano 1 |
+| `Torre 03` | Ultimo piano → **tetto** |
+
+Le mappe devono avere **le stesse dimensioni** ed essere **allineate** (l'edificio nello stesso punto in ogni immagine). Il piano con il numero più alto è il tetto, visto da chi sta fuori dall'edificio.
+
+### 2. Costruisci la scena composita
+
+Nella barra degli strumenti a sinistra trovi il gruppo **Scene Multi-Livello** (icona a livelli 🗇). Clicca sul **martello** e scegli la cartella: il modulo crea una nuova scena con:
+
+- un tile a tutta mappa per ogni piano (l'immagine di sfondo della scena originale);
+- muri, luci e tile copiati da ogni scena, etichettati con il piano di appartenenza.
+
+### 3. Disegna le zone
+
+Con la scena composita aperta:
+
+- **Zona scale** (icona scale, rettangolo arancione): trascina un rettangolo dove i PG possono cambiare piano. Quando un token ci finisce sopra, al proprietario appare un dialogo **Sali / Scendi / Resta** (sempre, anche se è disponibile una sola direzione). Un solo rettangolo funziona per tutta la tromba delle scale, su ogni piano.
+- **Area edificio** (icona edificio, rettangolo blu): trascina un rettangolo attorno all'edificio. I token **fuori** da quest'area vedono il **tetto** (l'ultimo piano); i token dentro vedono il piano su cui si trovano.
+- **Tasto destro** su una zona per eliminarla.
+
+### 4. Vista per GM e giocatori
+
+- **Giocatori**: vedono automaticamente il piano del proprio token (o il tetto se sono fuori dall'edificio). Token, muri, luci e pavimenti degli altri piani sono nascosti.
+- **GM**: cambia piano con le **frecce su/giù** negli strumenti del modulo. I token fuori dall'edificio restano sempre visibili al GM.
+
+### Impostazioni
+
+- **Altezza piano**: differenza di elevation tra un piano e l'altro (default 5). Il piano terra (01) è a elevation 0, il seminterrato (00) è negativo.
+- **Piano iniziale predefinito**: piano assegnato ai token appena trascinati in scena (default 1).
+- **Mostra le scale ai giocatori**: contorno arancione leggero sulle zone scale.
+
+### API
+
+```js
+const api = game.modules.get("multi-level-scenes").api;
+api.openBuilder();            // apre il builder
+api.buildComposite(folder);   // costruisce da un Folder di scene
+api.setLevel(2);              // cambia il piano visualizzato (GM)
+api.getViewedLevel();         // piano attualmente visualizzato
+api.refresh();                // forza il refresh della vista
+```
+
+## Note e limiti
+
+- I muri/luci disegnati dal GM sulla scena composita vengono assegnati automaticamente al piano attualmente visualizzato.
+- La visibilità tra piani è "un piano alla volta": non c'è (ancora) trasparenza verticale tra buchi nei pavimenti.
+- I dati dei piani vivono nei flag della scena composita: le scene originali non vengono toccate.
+
+---
+
+## English summary
+
+Group the scenes of a folder into one composite multi-level scene. Scene names must end with a floor number (`00` basement, `01` ground floor, highest = roof). Use the **hammer** tool to build the composite scene, the **stairs** tool to drag rectangles where tokens may change floor (an up/down/stay dialog is prompted to the owner), and the **building** tool to outline the building: tokens outside it see the roof. Players automatically view their token's floor; the GM switches floors with the arrow tools.
+
+## Licenza
+
+MIT

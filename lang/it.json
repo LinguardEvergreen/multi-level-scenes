@@ -1,0 +1,61 @@
+{
+  "MLS": {
+    "Controls": {
+      "Title": "Scene Multi-Livello",
+      "StairsTool": "Disegna zona scale (trascina un rettangolo)",
+      "BuildingTool": "Disegna area edificio (trascina un rettangolo)",
+      "LevelUp": "Sali di un piano (vista GM)",
+      "LevelDown": "Scendi di un piano (vista GM)",
+      "Build": "Costruisci scena multi-livello da una cartella"
+    },
+    "Layer": {
+      "Stairs": "Scale",
+      "Building": "Edificio",
+      "DeleteTitle": "Elimina zona",
+      "DeleteContent": "Vuoi eliminare questa zona ({type})?"
+    },
+    "Stairs": {
+      "Title": "Scale",
+      "Prompt": "{name} si trova sulle scale. Dove vuoi andare?",
+      "Up": "Sali: {name}",
+      "Down": "Scendi: {name}",
+      "Stay": "Resta qui",
+      "Moved": "{token} ora si trova a: {name} (piano {level})"
+    },
+    "Build": {
+      "Title": "Costruisci scena multi-livello",
+      "Hint": "Scegli la cartella con le scene dei piani. Ogni scena deve terminare con un numero: 00 = seminterrato, 01 = piano terra, il numero più alto è il tetto.",
+      "FolderLabel": "Cartella scene",
+      "Confirm": "Costruisci",
+      "SceneSuffix": "Multi-Livello",
+      "NoFolders": "Non esiste nessuna cartella di scene.",
+      "SkippedNoNumber": "Scena \"{name}\" ignorata: il nome non termina con un numero.",
+      "NeedTwo": "Servono almeno 2 scene con un numero finale nel nome.",
+      "DuplicateLevel": "Due scene hanno lo stesso numero di piano ({level}).",
+      "DimMismatch": "Attenzione: le scene non hanno tutte le stesse dimensioni. Verrà usata la dimensione del piano più basso.",
+      "NoBackground": "La scena \"{name}\" non ha un'immagine di sfondo: nessun tile creato per quel piano.",
+      "Done": "Scena \"{name}\" creata con {count} piani. Ora disegna le zone scale ed edificio con gli strumenti del modulo."
+    },
+    "Settings": {
+      "FloorHeight": {
+        "Name": "Altezza piano",
+        "Hint": "Differenza di elevazione (in unità di griglia, es. metri o piedi) tra un piano e il successivo."
+      },
+      "DefaultLevel": {
+        "Name": "Piano iniziale predefinito",
+        "Hint": "Piano assegnato ai nuovi token (di norma 1 = piano terra, dato che 00 è il seminterrato)."
+      },
+      "ShowStairsToPlayers": {
+        "Name": "Mostra le scale ai giocatori",
+        "Hint": "Se attivo, i giocatori vedono un leggero contorno arancione sulle zone scale."
+      }
+    },
+    "Info": {
+      "ViewingLevel": "Stai guardando: {name} (piano {level})"
+    },
+    "Warn": {
+      "NotComposite": "Questa non è una scena multi-livello. Creane una con lo strumento \"Costruisci\".",
+      "NoSuchLevel": "Il piano {level} non esiste in questa scena."
+    }
+  }
+}
