@@ -100,9 +100,10 @@ export async function buildComposite(folder) {
   const lights = [];
 
   for (const { scene, level } of parsed) {
-    const elevation = C.elevationFor(level);
-
-    // Floor background as a full-map tile
+    // Floor background as a full-map tile. Floor tiles all live at
+    // elevation 0: which floor is shown is decided per-client by this
+    // module, and a real elevation would render the roof tile above
+    // ground-level tokens standing outside the building.
     const src = scene.background?.src;
     if (src) {
       tiles.push({
@@ -111,7 +112,7 @@ export async function buildComposite(folder) {
         y: d.sceneY,
         width: d.sceneWidth,
         height: d.sceneHeight,
-        elevation,
+        elevation: 0,
         sort: -1000 + level,
         flags: { [C.MODULE_ID]: { level } }
       });
@@ -123,7 +124,6 @@ export async function buildComposite(folder) {
     for (const t of scene.tiles) {
       const data = t.toObject();
       delete data._id;
-      data.elevation = elevation + (data.elevation ?? 0);
       foundry.utils.setProperty(data, `flags.${C.MODULE_ID}.level`, level);
       tiles.push(data);
     }

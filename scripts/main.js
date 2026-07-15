@@ -27,6 +27,12 @@ Hooks.once("init", () => {
     default: 1,
     onChange: () => view.refreshView()
   });
+  game.settings.register(C.MODULE_ID, "migration", {
+    scope: "world",
+    config: false,
+    type: String,
+    default: "0"
+  });
   game.settings.register(C.MODULE_ID, "showStairsToPlayers", {
     name: "MLS.Settings.ShowStairsToPlayers.Name",
     hint: "MLS.Settings.ShowStairsToPlayers.Hint",
@@ -66,7 +72,38 @@ Hooks.once("ready", async () => {
     await game.settings.set(C.MODULE_ID, "floorHeight", 5);
     ui.notifications.info(C.loc("MLS.Info.FloorHeightFixed"));
   }
+  await migrate();
 });
+
+/**
+ * One-time migrations, tracked by a hidden world setting.
+ */
+async function migrate() {
+  const current = game.settings.get(C.MODULE_ID, "migration");
+
+  // 0.5.0: floor tiles used to carry a real elevation, which made the roof
+  // tile render above ground-level tokens standing outside the building.
+  // Bring every level-flagged tile back to its base elevation.
+  if (foundry.utils.isNewerVersion("0.5.0", current)) {
+    for (const scene of game.scenes) {
+      if (!C.isComposite(scene)) continue;
+      const updates = [];
+      for (const tile of scene.tiles) {
+        const level = tile.getFlag(C.MODULE_ID, "level");
+        if (level == null) continue;
+        const elevation = Math.max(0, tile.elevation - C.elevationFor(level));
+        if (tile.elevation !== elevation) updates.push({ _id: tile.id, elevation });
+      }
+      if (updates.length) {
+        await scene.updateEmbeddedDocuments("Tile", updates);
+        console.log(`${C.MODULE_ID} | migrated ${updates.length} tile elevations in "${scene.name}"`);
+      }
+    }
+  }
+
+  const version = game.modules.get(C.MODULE_ID).version;
+  if (current !== version) await game.settings.set(C.MODULE_ID, "migration", version);
+}
 
 /* -------------------------------------------- */
 /*  Canvas lifecycle                             */
@@ -144,8 +181,13 @@ Hooks.on("getSceneControlButtons", controls => {
 Hooks.on("preCreateToken", (doc, data, options, userId) => {
   if (!C.isComposite(doc.parent)) return;
   if (foundry.utils.hasProperty(data, `flags.${C.MODULE_ID}.level`)) return;
+  // Tokens dropped outside the building always start on the ground floor
+  // (they merely SEE the roof from out there); tokens dropped inside start
+  // on the floor currently being viewed.
   const onScene = canvas.ready && (canvas.scene === doc.parent);
-  const level = onScene ? (view.getViewedLevel() ?? C.defaultLevel(doc.parent)) : C.defaultLevel(doc.parent);
+  let level;
+  if (C.isOutsideBuilding(doc)) level = C.defaultLevel(doc.parent);
+  else level = onScene ? (view.getViewedLevel() ?? C.defaultLevel(doc.parent)) : C.defaultLevel(doc.parent);
   doc.updateSource({
     [`flags.${C.MODULE_ID}.level`]: level,
     elevation: C.elevationFor(level)

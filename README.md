@@ -43,7 +43,7 @@ Con la scena composita aperta:
   - **Direzione**: solo su, solo giù o entrambe.
 
   Il dialogo **Sali / Scendi / Resta** appare al proprietario appena il token **tocca** la zona (basta una sovrapposizione parziale, non serve il centro), e sempre, anche se è disponibile una sola direzione. Dopo la scelta (incluso "Resta") il dialogo non riappare finché il token non esce del tutto dalla zona e ci rientra; uscire dalla zona non lo fa mai comparire. **Tasto destro** su una zona scale per modificarla o eliminarla.
-- **Area edificio** (icona edificio, rettangolo blu): trascina un rettangolo attorno all'edificio. I token **fuori** da quest'area vedono il **tetto** (l'ultimo piano); i token dentro vedono il piano su cui si trovano. Tasto destro per eliminarla.
+- **Area edificio** (icona edificio, rettangolo blu): trascina un rettangolo attorno all'edificio. I token **fuori** da quest'area vedono il **tetto** (l'ultimo piano) pur restando **a terra** (piano 1, elevazione 0); i token dentro vedono il piano su cui si trovano. I token trascinati in scena fuori dall'edificio partono sempre dal piano terra. Tasto destro per eliminarla.
 
 ### 4. Vista per GM e giocatori
 
