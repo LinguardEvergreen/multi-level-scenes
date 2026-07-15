@@ -11,8 +11,24 @@
     "Layer": {
       "Stairs": "Stairs",
       "Building": "Building",
+      "LevelShort": "L{level}",
       "DeleteTitle": "Delete zone",
       "DeleteContent": "Delete this zone ({type})?"
+    },
+    "StairsConfig": {
+      "Title": "Configure stairs zone",
+      "LevelLabel": "Zone level",
+      "LevelHint": "The stairs zone only triggers for tokens on this floor. \"Every level\" makes it a single stairwell working on every floor.",
+      "AnyLevel": "Every level",
+      "AnyLevelShort": "all",
+      "DirectionLabel": "Direction",
+      "DirectionHint": "Where tokens may go from this zone: up only, down only, or both directions.",
+      "DirBoth": "Up and down",
+      "DirUp": "Up only",
+      "DirDown": "Down only",
+      "Save": "Save",
+      "Delete": "Delete",
+      "Cancel": "Cancel"
     },
     "Stairs": {
       "Title": "Stairs",

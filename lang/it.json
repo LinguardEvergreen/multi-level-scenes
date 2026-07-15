@@ -11,8 +11,24 @@
     "Layer": {
       "Stairs": "Scale",
       "Building": "Edificio",
+      "LevelShort": "P{level}",
       "DeleteTitle": "Elimina zona",
       "DeleteContent": "Vuoi eliminare questa zona ({type})?"
+    },
+    "StairsConfig": {
+      "Title": "Configura zona scale",
+      "LevelLabel": "Piano della zona",
+      "LevelHint": "La zona scale si attiva solo per i token che si trovano su questo piano. \"Tutti i piani\" la rende un'unica tromba delle scale valida ovunque.",
+      "AnyLevel": "Tutti i piani",
+      "AnyLevelShort": "tutti",
+      "DirectionLabel": "Direzione",
+      "DirectionHint": "Dove possono andare i token da questa zona: solo su, solo giù o entrambe le direzioni.",
+      "DirBoth": "Su e giù",
+      "DirUp": "Solo su",
+      "DirDown": "Solo giù",
+      "Save": "Salva",
+      "Delete": "Elimina",
+      "Cancel": "Annulla"
     },
     "Stairs": {
       "Title": "Scale",

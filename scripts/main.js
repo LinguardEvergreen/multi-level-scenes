@@ -133,11 +133,28 @@ Hooks.on("preCreateToken", (doc, data, options, userId) => {
 });
 
 Hooks.on("updateToken", (doc, changes, options, userId) => {
-  if (!canvas.ready || (doc.parent !== canvas.scene)) return;
-  if (!C.isComposite(canvas.scene)) return;
+  if (!C.isComposite(doc.parent)) return;
   const moved = ("x" in changes) || ("y" in changes);
   const levelChanged = foundry.utils.hasProperty(changes, `flags.${C.MODULE_ID}.level`);
-  if (!moved && !levelChanged) return;
+  const elevationChanged = "elevation" in changes;
+
+  // Keep level and elevation in sync (only on the initiating client, and
+  // never re-entering when the update came from this module itself)
+  if ((game.user.id === userId) && !options.mlsSync) {
+    if (elevationChanged) {
+      const level = C.levelFromElevation(doc.parent, doc.elevation);
+      if ((level != null) && (level !== C.tokenLevel(doc))) {
+        doc.update({ [`flags.${C.MODULE_ID}.level`]: level }, { mlsSync: true });
+        if (game.user.isGM && canvas.ready && (doc.parent === canvas.scene)) view.setGMLevel(level);
+      }
+    } else if (levelChanged) {
+      const elevation = C.elevationFor(C.tokenLevel(doc));
+      if (doc.elevation !== elevation) doc.update({ elevation }, { mlsSync: true });
+    }
+  }
+
+  if (!canvas.ready || (doc.parent !== canvas.scene)) return;
+  if (!moved && !levelChanged && !elevationChanged) return;
   view.refreshView();
   if (moved && (game.user.id === userId)) maybePromptStairs(doc);
 });

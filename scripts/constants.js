@@ -111,6 +111,27 @@ export function elevationFor(level) {
 }
 
 /**
+ * The floor matching a given elevation: the highest existing level whose
+ * base elevation is not above the token's elevation.
+ * E.g. with floorHeight 5: elevation 0..4 → level 1, 5..9 → level 2,
+ * negative → level 0 (basement).
+ * @param {Scene} scene
+ * @param {number} elevation
+ * @returns {number|null}
+ */
+export function levelFromElevation(scene, elevation) {
+  const nums = levelNumbers(scene);
+  if (!nums.length) return null;
+  const fh = floorHeight() || 1;
+  const candidate = Math.floor(elevation / fh) + 1;
+  let best = nums[0];
+  for (const n of nums) {
+    if (n <= candidate) best = n;
+  }
+  return best;
+}
+
+/**
  * The pixel center of a token document.
  * @param {TokenDocument} tokenDoc
  * @returns {{x: number, y: number}}
@@ -132,9 +153,22 @@ export function rectContains(rect, point) {
     && point.y >= rect.y && point.y <= rect.y + rect.height;
 }
 
-/** @returns {{id: string, x: number, y: number, width: number, height: number}[]} */
+/**
+ * Stairs zones. `level` binds the zone to a floor (null = every floor,
+ * legacy zones). `direction` is "up", "down" or "both" (default "both").
+ * @returns {{id: string, x: number, y: number, width: number, height: number, level: number|null, direction: string}[]}
+ */
 export function stairsRects(scene) {
   return scene?.getFlag(MODULE_ID, "stairs") ?? [];
+}
+
+/**
+ * Stairs zones that apply to a given floor.
+ * @param {Scene} scene
+ * @param {number} level
+ */
+export function stairsRectsForLevel(scene, level) {
+  return stairsRects(scene).filter(r => (r.level == null) || (r.level === level));
 }
 
 /** @returns {{id: string, x: number, y: number, width: number, height: number}[]} */

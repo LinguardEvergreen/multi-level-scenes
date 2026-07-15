@@ -38,14 +38,18 @@ Nella barra degli strumenti a sinistra trovi il gruppo **Scene Multi-Livello** (
 
 Con la scena composita aperta:
 
-- **Zona scale** (icona scale, rettangolo arancione): trascina un rettangolo dove i PG possono cambiare piano. Quando un token ci finisce sopra, al proprietario appare un dialogo **Sali / Scendi / Resta** (sempre, anche se è disponibile una sola direzione). Un solo rettangolo funziona per tutta la tromba delle scale, su ogni piano.
-- **Area edificio** (icona edificio, rettangolo blu): trascina un rettangolo attorno all'edificio. I token **fuori** da quest'area vedono il **tetto** (l'ultimo piano); i token dentro vedono il piano su cui si trovano.
-- **Tasto destro** su una zona per eliminarla.
+- **Zona scale** (icona scale, rettangolo arancione): trascina un rettangolo dove i PG possono cambiare piano. Alla creazione si apre un dialogo di configurazione con:
+  - **Piano della zona**: la zona si attiva solo per i token su quel piano (così puoi mettere scale diverse su piani diversi), oppure "Tutti i piani" per un'unica tromba delle scale;
+  - **Direzione**: solo su, solo giù o entrambe.
+
+  Quando un token ci finisce sopra, al proprietario appare un dialogo **Sali / Scendi / Resta** (sempre, anche se è disponibile una sola direzione). **Tasto destro** su una zona scale per modificarla o eliminarla.
+- **Area edificio** (icona edificio, rettangolo blu): trascina un rettangolo attorno all'edificio. I token **fuori** da quest'area vedono il **tetto** (l'ultimo piano); i token dentro vedono il piano su cui si trovano. Tasto destro per eliminarla.
 
 ### 4. Vista per GM e giocatori
 
 - **Giocatori**: vedono automaticamente il piano del proprio token (o il tetto se sono fuori dall'edificio). Token, muri, luci e pavimenti degli altri piani sono nascosti.
-- **GM**: cambia piano con le **frecce su/giù** negli strumenti del modulo. I token fuori dall'edificio restano sempre visibili al GM.
+- **GM**: cambia piano con le **frecce su/giù** negli strumenti del modulo. I token fuori dall'edificio restano sempre visibili al GM. Quando il GM sposta un token attraverso le scale, la sua vista segue automaticamente il token.
+- **Elevazione = piano**: cambiare l'elevazione di un token (anche dal HUD del token) lo sposta sul piano corrispondente, e viceversa il cambio piano aggiorna l'elevazione. Con altezza piano 5: elevazione 0–4 → piano 1, 5–9 → piano 2, negativa → piano 0.
 
 ### Impostazioni
 

@@ -1,13 +1,13 @@
 import * as C from "./constants.js";
+import { setGMLevel } from "./view.js";
 
 /**
  * When a token finishes a movement inside a stairs rectangle, prompt its
  * owner (the client that moved it) with an "up / down / stay" dialog.
  * The dialog is always shown, even when only one direction is available.
  *
- * A stairs rectangle is level-agnostic: entering it on level N offers the
- * next level above and/or below N among the levels of the composite scene,
- * so a single stairwell rectangle works across every floor.
+ * A stairs zone may be bound to a level (it only triggers for tokens on
+ * that floor) and to a direction: "up", "down" or "both".
  *
  * @param {TokenDocument} tokenDoc
  */
@@ -17,13 +17,16 @@ export async function maybePromptStairs(tokenDoc) {
   if (!tokenDoc.isOwner) return;
 
   const center = C.tokenCenter(tokenDoc);
-  const rect = C.stairsRects(scene).find(r => C.rectContains(r, center));
+  const cur = C.tokenLevel(tokenDoc);
+  const rect = C.stairsRects(scene).find(r =>
+    C.rectContains(r, center) && ((r.level == null) || (r.level === cur))
+  );
   if (!rect) return;
 
   const nums = C.levelNumbers(scene);
-  const cur = C.tokenLevel(tokenDoc);
-  const up = nums.find(n => n > cur) ?? null;
-  const down = [...nums].reverse().find(n => n < cur) ?? null;
+  const direction = rect.direction ?? "both";
+  const up = direction !== "down" ? (nums.find(n => n > cur) ?? null) : null;
+  const down = direction !== "up" ? ([...nums].reverse().find(n => n < cur) ?? null) : null;
   if (up === null && down === null) return;
 
   const buttons = [];
@@ -61,8 +64,11 @@ export async function maybePromptStairs(tokenDoc) {
   await tokenDoc.update({
     [`flags.${C.MODULE_ID}.level`]: target,
     elevation: C.elevationFor(target)
-  });
-  ui.notifications.info(C.locf("MLS.Stairs.Moved", {
+  }, { mlsSync: true });
+
+  // The GM view follows the token it just moved through the stairs
+  if (game.user.isGM) setGMLevel(target);
+  else ui.notifications.info(C.locf("MLS.Stairs.Moved", {
     token: tokenDoc.name,
     name: C.levelName(scene, target),
     level: target

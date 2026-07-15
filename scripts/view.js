@@ -246,7 +246,7 @@ export function refreshView() {
     refreshVision: true,
     refreshOcclusion: true
   });
-  for (const t of canvas.tiles.placeables) t.renderFlags.set({ refreshState: true });
+  for (const t of canvas.tiles.placeables) t.renderFlags.set({ refresh: true });
   for (const t of canvas.tokens.placeables) t.renderFlags.set({ refreshVisibility: true });
   for (const w of canvas.walls.placeables) w.renderFlags.set({ refresh: true });
   for (const l of canvas.lighting.placeables) l.renderFlags.set({ refresh: true });

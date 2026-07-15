@@ -1,8 +1,15 @@
 import * as C from "./constants.js";
+import { getViewedLevel } from "./view.js";
 
 const COLORS = {
   stairs: 0xff9900,
   building: 0x3399ff
+};
+
+const DIRECTION_ARROWS = {
+  both: "↕",
+  up: "↑",
+  down: "↓"
 };
 
 /* -------------------------------------------- */
@@ -23,8 +30,10 @@ function ensureOverlay() {
 
 /**
  * Redraw the stairs / building rectangles overlay.
- * GM sees both zone types with labels; players see stairs zones faintly
- * (if enabled in settings) and never see building zones.
+ * Stairs zones are only drawn for the currently viewed level (zones without
+ * a level apply everywhere and are always drawn). GM sees both zone types
+ * with labels; players see stairs zones faintly (if enabled in settings)
+ * and never see building zones.
  */
 export function refreshOverlay() {
   if (!canvas.ready) return;
@@ -35,11 +44,12 @@ export function refreshOverlay() {
 
   const isGM = game.user.isGM;
   const showStairsToPlayers = game.settings.get(C.MODULE_ID, "showStairsToPlayers");
+  const viewed = getViewedLevel();
 
   if (isGM || showStairsToPlayers) {
-    for (const r of C.stairsRects(scene)) {
+    for (const r of C.stairsRectsForLevel(scene, viewed)) {
       o.addChild(makeRect(r, COLORS.stairs, isGM ? 0.9 : 0.35, isGM ? 0.15 : 0.06));
-      if (isGM) o.addChild(makeLabel(C.loc("MLS.Layer.Stairs"), r, COLORS.stairs));
+      if (isGM) o.addChild(makeLabel(stairsLabel(scene, r), r, COLORS.stairs));
     }
   }
   if (isGM) {
@@ -48,6 +58,14 @@ export function refreshOverlay() {
       o.addChild(makeLabel(C.loc("MLS.Layer.Building"), r, COLORS.building));
     }
   }
+}
+
+function stairsLabel(scene, r) {
+  const arrow = DIRECTION_ARROWS[r.direction ?? "both"] ?? DIRECTION_ARROWS.both;
+  const where = r.level == null
+    ? C.loc("MLS.StairsConfig.AnyLevelShort")
+    : C.locf("MLS.Layer.LevelShort", { level: r.level });
+  return `${C.loc("MLS.Layer.Stairs")} ${arrow} · ${where}`;
 }
 
 function makeRect(r, color, lineAlpha, fillAlpha) {
@@ -66,6 +84,88 @@ function makeLabel(text, r, color) {
   const label = new PIXI.Text(text, style);
   label.position.set(r.x + 6, r.y + 4);
   return label;
+}
+
+/* -------------------------------------------- */
+/*  Stairs configuration dialog                  */
+/* -------------------------------------------- */
+
+/**
+ * Show the stairs zone configuration dialog (level binding + direction).
+ * @param {Scene} scene
+ * @param {object} data              Current zone values
+ * @param {object} [options]
+ * @param {boolean} [options.isNew]  Hide the delete button for new zones
+ * @returns {Promise<{level: number|null, direction: string}|"delete"|null>}
+ */
+async function stairsConfigDialog(scene, data, { isNew = false } = {}) {
+  const nums = C.levelNumbers(scene);
+  const levelOptions = [
+    `<option value="" ${data.level == null ? "selected" : ""}>${C.loc("MLS.StairsConfig.AnyLevel")}</option>`,
+    ...nums.map(n =>
+      `<option value="${n}" ${n === data.level ? "selected" : ""}>${C.levelName(scene, n)} (${C.locf("MLS.Layer.LevelShort", { level: n })})</option>`
+    )
+  ].join("");
+
+  const dirLabels = {
+    both: C.loc("MLS.StairsConfig.DirBoth"),
+    up: C.loc("MLS.StairsConfig.DirUp"),
+    down: C.loc("MLS.StairsConfig.DirDown")
+  };
+  const current = data.direction ?? "both";
+  const dirOptions = ["both", "up", "down"]
+    .map(d => `<option value="${d}" ${d === current ? "selected" : ""}>${dirLabels[d]}</option>`)
+    .join("");
+
+  const content = `
+    <div class="form-group">
+      <label>${C.loc("MLS.StairsConfig.LevelLabel")}</label>
+      <select name="level" style="width: 100%;">${levelOptions}</select>
+      <p class="hint">${C.loc("MLS.StairsConfig.LevelHint")}</p>
+    </div>
+    <div class="form-group">
+      <label>${C.loc("MLS.StairsConfig.DirectionLabel")}</label>
+      <select name="direction" style="width: 100%;">${dirOptions}</select>
+      <p class="hint">${C.loc("MLS.StairsConfig.DirectionHint")}</p>
+    </div>`;
+
+  const buttons = [
+    {
+      action: "save",
+      label: C.loc("MLS.StairsConfig.Save"),
+      icon: "fa-solid fa-check",
+      default: true,
+      callback: (event, button) => {
+        const raw = button.form.elements.level.value;
+        return {
+          level: raw === "" ? null : Number(raw),
+          direction: button.form.elements.direction.value
+        };
+      }
+    }
+  ];
+  if (!isNew) {
+    buttons.push({
+      action: "delete",
+      label: C.loc("MLS.StairsConfig.Delete"),
+      icon: "fa-solid fa-trash"
+    });
+  }
+  buttons.push({
+    action: "cancel",
+    label: C.loc("MLS.StairsConfig.Cancel"),
+    icon: "fa-solid fa-xmark"
+  });
+
+  const result = await foundry.applications.api.DialogV2.wait({
+    window: { title: C.loc("MLS.StairsConfig.Title") },
+    content,
+    buttons,
+    rejectClose: false
+  });
+  if (result === "delete") return "delete";
+  if (!result || result === "cancel") return null;
+  return result;
 }
 
 /* -------------------------------------------- */
@@ -125,9 +225,19 @@ export class MLSLayer extends foundry.canvas.layers.InteractionLayer {
     }
     const rect = this.#dragRect(event);
     if (!rect || rect.width < 10 || rect.height < 10) return;
+
     const key = this.#activeTool === "building" ? "building" : "stairs";
+    const entry = { id: foundry.utils.randomID(), ...rect };
+
+    if (key === "stairs") {
+      const config = await stairsConfigDialog(scene, { level: getViewedLevel(), direction: "both" }, { isNew: true });
+      if (!config) return;
+      entry.level = config.level;
+      entry.direction = config.direction;
+    }
+
     const list = [...(scene.getFlag(C.MODULE_ID, key) ?? [])];
-    list.push({ id: foundry.utils.randomID(), ...rect });
+    list.push(entry);
     await scene.setFlag(C.MODULE_ID, key, list);
   }
 
@@ -137,7 +247,9 @@ export class MLSLayer extends foundry.canvas.layers.InteractionLayer {
   }
 
   /**
-   * Right-click deletes the zone under the cursor (with confirmation).
+   * Right-click a stairs zone to edit it (level, direction, delete);
+   * right-click a building zone to delete it (with confirmation).
+   * Only zones of the currently viewed level are targeted.
    * @override
    */
   async _onClickRight(event) {
@@ -146,21 +258,37 @@ export class MLSLayer extends foundry.canvas.layers.InteractionLayer {
     if (!C.isComposite(scene)) return;
     const pos = event.interactionData?.origin ?? event.getLocalPosition?.(this);
     if (!pos) return;
-    for (const key of ["stairs", "building"]) {
-      const list = scene.getFlag(C.MODULE_ID, key) ?? [];
-      const hit = list.findLast?.(r => C.rectContains(r, pos))
-        ?? [...list].reverse().find(r => C.rectContains(r, pos));
-      if (!hit) continue;
+
+    // Stairs zones: edit dialog
+    const stairs = scene.getFlag(C.MODULE_ID, "stairs") ?? [];
+    const viewed = getViewedLevel();
+    const stairsHit = [...stairs].reverse().find(r =>
+      C.rectContains(r, pos) && ((r.level == null) || (r.level === viewed))
+    );
+    if (stairsHit) {
+      const result = await stairsConfigDialog(scene, stairsHit);
+      if (result === "delete") {
+        await scene.setFlag(C.MODULE_ID, "stairs", stairs.filter(r => r.id !== stairsHit.id));
+      } else if (result) {
+        const updated = stairs.map(r => r.id === stairsHit.id ? { ...r, level: result.level, direction: result.direction } : r);
+        await scene.setFlag(C.MODULE_ID, "stairs", updated);
+      }
+      return;
+    }
+
+    // Building zones: delete confirmation
+    const building = scene.getFlag(C.MODULE_ID, "building") ?? [];
+    const buildingHit = [...building].reverse().find(r => C.rectContains(r, pos));
+    if (buildingHit) {
       const confirmed = await foundry.applications.api.DialogV2.confirm({
         window: { title: C.loc("MLS.Layer.DeleteTitle") },
-        content: `<p>${C.locf("MLS.Layer.DeleteContent", { type: C.loc(key === "building" ? "MLS.Layer.Building" : "MLS.Layer.Stairs") })}</p>`,
+        content: `<p>${C.locf("MLS.Layer.DeleteContent", { type: C.loc("MLS.Layer.Building") })}</p>`,
         rejectClose: false,
         modal: true
       });
       if (confirmed) {
-        await scene.setFlag(C.MODULE_ID, key, list.filter(r => r.id !== hit.id));
+        await scene.setFlag(C.MODULE_ID, "building", building.filter(r => r.id !== buildingHit.id));
       }
-      return;
     }
   }
 
