@@ -43,7 +43,8 @@ Con la scena composita aperta:
   - **Direzione**: solo su, solo giù o entrambe.
 
   Il dialogo **Sali / Scendi / Resta** appare al proprietario appena il token **tocca** la zona (basta una sovrapposizione parziale, non serve il centro), e sempre, anche se è disponibile una sola direzione. Dopo la scelta (incluso "Resta") il dialogo non riappare finché il token non esce del tutto dalla zona e ci rientra; uscire dalla zona non lo fa mai comparire. **Tasto destro** su una zona scale per modificarla o eliminarla.
-- **Area edificio** (icona edificio, rettangolo blu): trascina un rettangolo attorno all'edificio. I token **fuori** da quest'area vedono l'**immagine del tetto** (l'ultimo piano), ma è un effetto puramente visivo: restano a terra e continuano a interagire col **proprio piano** — porte d'ingresso visibili e cliccabili, muri del piano terra attivi. I token trascinati in scena fuori dall'edificio partono sempre dal piano terra. Tasto destro per eliminarla.
+- **Area edificio** (icona edificio, rettangolo blu): trascina un rettangolo attorno all'edificio. Per i token **fuori** da quest'area l'immagine del **tetto** (l'ultimo piano) viene disegnata sopra l'area edificio, al di sopra di nebbia e visione — pulita, senza tagli. È un effetto puramente visivo: il token resta a terra e continua a interagire col **proprio piano** (porte d'ingresso visibili e cliccabili, muri del piano terra attivi, esterno esplorabile normalmente). I token trascinati in scena fuori dall'edificio partono sempre dal piano terra. Tasto destro per eliminarla.
+- Le zone (scale ed edificio) sono visibili **solo al GM**: i giocatori non vedono nessun rettangolo.
 
 ### 4. Vista per GM e giocatori
 
@@ -55,7 +56,6 @@ Con la scena composita aperta:
 
 - **Altezza piano**: differenza di elevation tra un piano e l'altro (default 5). Il piano terra (01) è a elevation 0, il seminterrato (00) è negativo.
 - **Piano iniziale predefinito**: piano assegnato ai token appena trascinati in scena (default 1).
-- **Mostra le scale ai giocatori**: contorno arancione leggero sulle zone scale.
 
 ### API
 

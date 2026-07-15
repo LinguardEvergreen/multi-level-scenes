@@ -58,21 +58,24 @@ export function getViewedLevel() {
 }
 
 /**
- * The level whose floor image (tile) is displayed. Purely visual: when the
- * point-of-view token stands outside every building rectangle, the roof
- * (top level) image is shown instead of its own floor — but walls, doors
- * and everything else keep following {@link getViewedLevel}.
- * @returns {number|null}
+ * Is the roof overlay active for this client? True when the point-of-view
+ * token stands outside every building rectangle: the roof (top level)
+ * image is then painted OVER the building area, above fog and vision,
+ * while the token keeps seeing and interacting with its own floor.
+ * The GM manual override (arrow tools) disables it to inspect floors.
+ * @returns {boolean}
  */
-export function getDisplayedTileLevel() {
+export function roofModeActive() {
   const scene = canvas.scene;
-  if (!C.isComposite(scene)) return null;
-  if (game.user.isGM && gmLevel != null && C.levelNumbers(scene).includes(gmLevel)) return gmLevel;
-  const token = game.user.isGM ? canvas.tokens.controlled[0] : primaryToken();
-  if (token && C.isOutsideBuilding(token.document)) {
-    return C.topLevel(scene) ?? getViewedLevel();
+  if (!C.isComposite(scene)) return false;
+  if (!C.buildingRects(scene).length) return false;
+  if (game.user.isGM) {
+    if (gmLevel != null && C.levelNumbers(scene).includes(gmLevel)) return false;
+    const controlled = canvas.tokens.controlled[0];
+    return !!controlled && C.isOutsideBuilding(controlled.document);
   }
-  return getViewedLevel();
+  const token = primaryToken();
+  return !!token && C.isOutsideBuilding(token.document);
 }
 
 export function resetGMLevel() {
@@ -181,8 +184,7 @@ export function enforceTileVisibility(tile) {
   if (!C.isComposite(tile.document.parent)) return;
   const lvl = tile.document.getFlag(C.MODULE_ID, "level");
   if (lvl == null) return;
-  // Tiles follow the DISPLAYED level (roof logic), unlike walls & doors
-  const shown = lvl === getDisplayedTileLevel();
+  const shown = docLevelVisible(tile.document);
   if (!shown) {
     tile.visible = false;
     if (tile.mesh) tile.mesh.visible = false;

@@ -33,14 +33,13 @@ Hooks.once("init", () => {
     type: String,
     default: "0"
   });
+  // Deprecated: stairs zones are GM-only now. Kept registered so worlds
+  // that stored a value do not error.
   game.settings.register(C.MODULE_ID, "showStairsToPlayers", {
-    name: "MLS.Settings.ShowStairsToPlayers.Name",
-    hint: "MLS.Settings.ShowStairsToPlayers.Hint",
     scope: "world",
-    config: true,
+    config: false,
     type: Boolean,
-    default: true,
-    onChange: () => refreshOverlay()
+    default: false
   });
 
   CONFIG.Canvas.layers.mls = { layerClass: MLSLayer, group: "interface" };
@@ -97,6 +96,29 @@ async function migrate() {
       if (updates.length) {
         await scene.updateEmbeddedDocuments("Tile", updates);
         console.log(`${C.MODULE_ID} | migrated ${updates.length} tile elevations in "${scene.name}"`);
+      }
+    }
+  }
+
+  // 0.7.0: basement tiles must follow their negative elevation, or tokens
+  // down there (elevation -5) render BELOW their own floor tile and vanish.
+  // Also tag the full-map floor tiles created by the builder.
+  if (foundry.utils.isNewerVersion("0.7.0", current)) {
+    for (const scene of game.scenes) {
+      if (!C.isComposite(scene)) continue;
+      const updates = [];
+      for (const tile of scene.tiles) {
+        const level = tile.getFlag(C.MODULE_ID, "level");
+        if (level == null) continue;
+        const update = { _id: tile.id };
+        const base = Math.min(0, C.elevationFor(level));
+        if (base !== 0) update.elevation = base + tile.elevation;
+        if (tile.sort === (-1000 + level)) update[`flags.${C.MODULE_ID}.floor`] = true;
+        if (Object.keys(update).length > 1) updates.push(update);
+      }
+      if (updates.length) {
+        await scene.updateEmbeddedDocuments("Tile", updates);
+        console.log(`${C.MODULE_ID} | migrated ${updates.length} tiles (0.7.0) in "${scene.name}"`);
       }
     }
   }

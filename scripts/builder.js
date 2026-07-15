@@ -100,10 +100,12 @@ export async function buildComposite(folder) {
   const lights = [];
 
   for (const { scene, level } of parsed) {
-    // Floor background as a full-map tile. Floor tiles all live at
-    // elevation 0: which floor is shown is decided per-client by this
-    // module, and a real elevation would render the roof tile above
-    // ground-level tokens standing outside the building.
+    // Floor tiles must never render ABOVE the tokens standing on their
+    // floor. Upper floors sit at elevation 0 (which floor is shown is a
+    // per-client decision, and tokens draw above tiles at equal elevation);
+    // basements follow their negative elevation so tokens down there
+    // (e.g. -5) are not covered by their own floor tile.
+    const base = Math.min(0, C.elevationFor(level));
     const src = scene.background?.src;
     if (src) {
       tiles.push({
@@ -112,9 +114,9 @@ export async function buildComposite(folder) {
         y: d.sceneY,
         width: d.sceneWidth,
         height: d.sceneHeight,
-        elevation: 0,
+        elevation: base,
         sort: -1000 + level,
-        flags: { [C.MODULE_ID]: { level } }
+        flags: { [C.MODULE_ID]: { level, floor: true } }
       });
     } else {
       ui.notifications.warn(C.locf("MLS.Build.NoBackground", { name: scene.name }));
@@ -124,6 +126,7 @@ export async function buildComposite(folder) {
     for (const t of scene.tiles) {
       const data = t.toObject();
       delete data._id;
+      data.elevation = base + (data.elevation ?? 0);
       foundry.utils.setProperty(data, `flags.${C.MODULE_ID}.level`, level);
       tiles.push(data);
     }

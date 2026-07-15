@@ -1,5 +1,5 @@
 import * as C from "./constants.js";
-import { getViewedLevel } from "./view.js";
+import { getViewedLevel, roofModeActive } from "./view.js";
 
 const COLORS = {
   stairs: 0xff9900,
@@ -29,11 +29,13 @@ function ensureOverlay() {
 }
 
 /**
- * Redraw the stairs / building rectangles overlay.
+ * Redraw the module overlay:
+ * - the ROOF: when the point-of-view token is outside the building, the top
+ *   level's floor image is painted over the building rectangles, above fog
+ *   and vision, while the token keeps interacting with its own floor;
+ * - the stairs / building zone rectangles, GM ONLY (players never see them).
  * Stairs zones are only drawn for the currently viewed level (zones without
- * a level apply everywhere and are always drawn). GM sees both zone types
- * with labels; players see stairs zones faintly (if enabled in settings)
- * and never see building zones.
+ * a level apply everywhere and are always drawn).
  */
 export function refreshOverlay() {
   if (!canvas.ready) return;
@@ -42,22 +44,51 @@ export function refreshOverlay() {
   const scene = canvas.scene;
   if (!C.isComposite(scene)) return;
 
-  const isGM = game.user.isGM;
-  const showStairsToPlayers = game.settings.get(C.MODULE_ID, "showStairsToPlayers");
-  const viewed = getViewedLevel();
+  drawRoof(o, scene);
 
-  if (isGM || showStairsToPlayers) {
-    for (const r of C.stairsRectsForLevel(scene, viewed)) {
-      o.addChild(makeRect(r, COLORS.stairs, isGM ? 0.9 : 0.35, isGM ? 0.15 : 0.06));
-      if (isGM) o.addChild(makeLabel(stairsLabel(scene, r), r, COLORS.stairs));
-    }
+  if (!game.user.isGM) return;
+  const viewed = getViewedLevel();
+  for (const r of C.stairsRectsForLevel(scene, viewed)) {
+    o.addChild(makeRect(r, COLORS.stairs, 0.9, 0.15));
+    o.addChild(makeLabel(stairsLabel(scene, r), r, COLORS.stairs));
   }
-  if (isGM) {
-    for (const r of C.buildingRects(scene)) {
-      o.addChild(makeRect(r, COLORS.building, 0.9, 0.06));
-      o.addChild(makeLabel(C.loc("MLS.Layer.Building"), r, COLORS.building));
-    }
+  for (const r of C.buildingRects(scene)) {
+    o.addChild(makeRect(r, COLORS.building, 0.9, 0.06));
+    o.addChild(makeLabel(C.loc("MLS.Layer.Building"), r, COLORS.building));
   }
+}
+
+/**
+ * Paint the top level's floor image over the building rectangles when the
+ * point-of-view token stands outside the building.
+ */
+function drawRoof(overlayContainer, scene) {
+  if (!roofModeActive()) return;
+  const top = C.topLevel(scene);
+  if (top == null) return;
+  const rects = C.buildingRects(scene);
+
+  // The roof image comes from the top level's floor tile, whose texture is
+  // already loaded even while the tile itself is hidden
+  const tiles = canvas.tiles.placeables.filter(t => t.document.getFlag(C.MODULE_ID, "level") === top && t.texture);
+  const roofTile = tiles.find(t => t.document.getFlag(C.MODULE_ID, "floor"))
+    ?? tiles.sort((a, b) => (b.document.width * b.document.height) - (a.document.width * a.document.height))[0];
+  if (!roofTile) return;
+
+  const container = new PIXI.Container();
+  container.eventMode = "none";
+  const sprite = new PIXI.Sprite(roofTile.texture);
+  sprite.position.set(roofTile.document.x, roofTile.document.y);
+  sprite.width = roofTile.document.width;
+  sprite.height = roofTile.document.height;
+  const mask = new PIXI.Graphics();
+  mask.beginFill(0xffffff);
+  for (const r of rects) mask.drawRect(r.x, r.y, r.width, r.height);
+  mask.endFill();
+  container.addChild(sprite);
+  container.addChild(mask);
+  container.mask = mask;
+  overlayContainer.addChildAt(container, 0);
 }
 
 function stairsLabel(scene, r) {
