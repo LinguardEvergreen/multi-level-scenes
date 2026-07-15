@@ -196,6 +196,61 @@ export function patchLights() {
 }
 
 /**
+ * Patch ClockwiseSweepPolygon edge inclusion so walls of non-viewed levels
+ * never take part in vision, lighting, sound or movement-collision sweeps.
+ * This is the primary wall filter: it works even if the edge collection
+ * still contains every wall. Must be called once during "init".
+ */
+export function patchSweep() {
+  const CSP = foundry.canvas.geometry?.ClockwiseSweepPolygon ?? globalThis.ClockwiseSweepPolygon;
+  if (!CSP?.prototype?._testEdgeInclusion) {
+    console.error(`${C.MODULE_ID} | Unable to patch ClockwiseSweepPolygon#_testEdgeInclusion`);
+    return;
+  }
+  const original = CSP.prototype._testEdgeInclusion;
+  CSP.prototype._testEdgeInclusion = function(edge, ...args) {
+    try {
+      if (!edgeLevelVisible(edge)) return false;
+    } catch (err) {
+      console.error(`${C.MODULE_ID} | edge level filter failed`, err);
+    }
+    return original.call(this, edge, ...args);
+  };
+}
+
+function edgeLevelVisible(edge) {
+  if (!canvas.ready || !C.isComposite(canvas.scene)) return true;
+  const doc = edge?.object?.document ?? canvas.walls.get(edge?.id)?.document;
+  if (!doc || (doc.documentName !== "Wall")) return true;
+  return docLevelVisible(doc);
+}
+
+/**
+ * Patch DoorControl#isVisible so door icons of non-viewed levels are hidden
+ * (for the GM too). Must be called once during "init".
+ */
+export function patchDoorControls() {
+  const DoorControl = foundry.canvas.containers?.DoorControl ?? globalThis.DoorControl;
+  const original = DoorControl && Object.getOwnPropertyDescriptor(DoorControl.prototype, "isVisible");
+  if (!original?.get) {
+    console.error(`${C.MODULE_ID} | Unable to patch DoorControl#isVisible`);
+    return;
+  }
+  Object.defineProperty(DoorControl.prototype, "isVisible", {
+    get() {
+      try {
+        const doc = this.wall?.document;
+        if (doc && !docLevelVisible(doc)) return false;
+      } catch (err) {
+        console.error(`${C.MODULE_ID} | door level filter failed`, err);
+      }
+      return original.get.call(this);
+    },
+    configurable: true
+  });
+}
+
+/**
  * Wrap canvas.edges.initialize so wall edges of non-viewed levels are removed
  * from the client-side edge collection (vision & movement blocking).
  * Must be called on every "canvasReady".
@@ -250,5 +305,10 @@ export function refreshView() {
   for (const t of canvas.tokens.placeables) t.renderFlags.set({ refreshVisibility: true });
   for (const w of canvas.walls.placeables) w.renderFlags.set({ refresh: true });
   for (const l of canvas.lighting.placeables) l.renderFlags.set({ refresh: true });
+  try {
+    for (const dc of canvas.controls?.doors?.children ?? []) dc.visible = dc.isVisible;
+  } catch (err) {
+    console.error(`${C.MODULE_ID} | door controls refresh failed`, err);
+  }
   refreshOverlay();
 }

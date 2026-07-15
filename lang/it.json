@@ -67,7 +67,8 @@
       }
     },
     "Info": {
-      "ViewingLevel": "Stai guardando: {name} (piano {level})"
+      "ViewingLevel": "Stai guardando: {name} (piano {level})",
+      "FloorHeightFixed": "Multi-Level Scenes: altezza piano corretta da 4.5 a 5."
     },
     "Warn": {
       "NotComposite": "Questa non è una scena multi-livello. Creane una con lo strumento \"Costruisci\".",

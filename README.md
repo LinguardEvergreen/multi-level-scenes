@@ -70,7 +70,9 @@ api.refresh();                // forza il refresh della vista
 
 ## Note e limiti
 
+- Muri, porte (incluse le icone delle porte), luci e collisioni di movimento valgono **solo sul piano a cui appartengono**: sul piano visualizzato sono attivi solo i muri di quel piano.
 - I muri/luci disegnati dal GM sulla scena composita vengono assegnati automaticamente al piano attualmente visualizzato.
+- L'**altezza piano** deve essere un valore "tondo" rispetto alle elevazioni usate (default 5): un valore come 4.5 mette i token esattamente sul confine tra due piani e li fa cambiare piano al primo movimento.
 - La visibilità tra piani è "un piano alla volta": non c'è (ancora) trasparenza verticale tra buchi nei pavimenti.
 - I dati dei piani vivono nei flag della scena composita: le scene originali non vengono toccate.
 

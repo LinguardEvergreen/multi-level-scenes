@@ -15,7 +15,8 @@ Hooks.once("init", () => {
     scope: "world",
     config: true,
     type: Number,
-    default: 5
+    default: 5,
+    onChange: () => view.refreshView()
   });
   game.settings.register(C.MODULE_ID, "defaultLevel", {
     name: "MLS.Settings.DefaultLevel.Name",
@@ -23,7 +24,8 @@ Hooks.once("init", () => {
     scope: "world",
     config: true,
     type: Number,
-    default: 1
+    default: 1,
+    onChange: () => view.refreshView()
   });
   game.settings.register(C.MODULE_ID, "showStairsToPlayers", {
     name: "MLS.Settings.ShowStairsToPlayers.Name",
@@ -31,13 +33,16 @@ Hooks.once("init", () => {
     scope: "world",
     config: true,
     type: Boolean,
-    default: true
+    default: true,
+    onChange: () => refreshOverlay()
   });
 
   CONFIG.Canvas.layers.mls = { layerClass: MLSLayer, group: "interface" };
 
   view.patchToken();
   view.patchLights();
+  view.patchSweep();
+  view.patchDoorControls();
 
   const module = game.modules.get(C.MODULE_ID);
   module.api = {
@@ -47,6 +52,20 @@ Hooks.once("init", () => {
     getViewedLevel: view.getViewedLevel,
     refresh: view.refreshView
   };
+});
+
+/* -------------------------------------------- */
+/*  Ready: one-time fixes                        */
+/* -------------------------------------------- */
+
+Hooks.once("ready", async () => {
+  if (!game.user.isGM) return;
+  // Floor height must be a round 5: a 4.5 value put tokens right on the
+  // floor boundary, flipping them to the wrong level as soon as they moved
+  if (game.settings.get(C.MODULE_ID, "floorHeight") === 4.5) {
+    await game.settings.set(C.MODULE_ID, "floorHeight", 5);
+    ui.notifications.info(C.loc("MLS.Info.FloorHeightFixed"));
+  }
 });
 
 /* -------------------------------------------- */

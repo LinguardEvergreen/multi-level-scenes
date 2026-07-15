@@ -67,7 +67,8 @@
       }
     },
     "Info": {
-      "ViewingLevel": "Now viewing: {name} (level {level})"
+      "ViewingLevel": "Now viewing: {name} (level {level})",
+      "FloorHeightFixed": "Multi-Level Scenes: floor height corrected from 4.5 to 5."
     },
     "Warn": {
       "NotComposite": "This is not a multi-level scene. Create one with the \"Build\" tool.",
