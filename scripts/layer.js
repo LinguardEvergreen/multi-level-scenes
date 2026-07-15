@@ -71,6 +71,16 @@ function drawRoof(overlayContainer, scene) {
   if (!roofModeActive()) return;
   const top = C.topLevel(scene);
   if (top == null) return;
+
+  // Black out the whole building area first: previously explored interior
+  // (fog memory) must never peek out around the roof image
+  const cover = new PIXI.Graphics();
+  cover.eventMode = "none";
+  cover.beginFill(0x000000, 1);
+  for (const r of C.buildingRects(scene)) cover.drawRect(r.x, r.y, r.width, r.height);
+  cover.endFill();
+  overlayContainer.addChild(cover);
+
   // Dedicated roof rectangles (perspective maps) win over the building ones
   const roofRects = C.roofRects(scene);
   const rects = roofRects.length ? roofRects : C.buildingRects(scene);
@@ -95,7 +105,7 @@ function drawRoof(overlayContainer, scene) {
   container.addChild(sprite);
   container.addChild(mask);
   container.mask = mask;
-  overlayContainer.addChildAt(container, 0);
+  overlayContainer.addChild(container);
 }
 
 function stairsLabel(scene, r) {
