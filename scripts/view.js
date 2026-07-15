@@ -32,7 +32,22 @@ export function primaryToken() {
 }
 
 /**
+ * The level a token effectively views: its own floor, or the roof (top
+ * level) when it stands outside every building rectangle.
+ * @param {TokenDocument} tokenDoc
+ * @returns {number}
+ */
+export function effectiveTokenLevel(tokenDoc) {
+  if (C.isOutsideBuilding(tokenDoc)) return C.topLevel(tokenDoc.parent) ?? C.tokenLevel(tokenDoc);
+  return C.tokenLevel(tokenDoc);
+}
+
+/**
  * The level currently viewed by this client.
+ *
+ * Players follow their token (roof included). The GM follows the token
+ * they control — the arrow tools set a manual override, which is cleared
+ * again as soon as the GM controls or moves a token.
  * @returns {number|null}
  */
 export function getViewedLevel() {
@@ -40,16 +55,44 @@ export function getViewedLevel() {
   if (!C.isComposite(scene)) return null;
   if (game.user.isGM) {
     if (gmLevel != null && C.levelNumbers(scene).includes(gmLevel)) return gmLevel;
+    const controlled = canvas.tokens.controlled[0];
+    if (controlled) return effectiveTokenLevel(controlled.document);
     return C.defaultLevel(scene);
   }
   const token = primaryToken();
   if (!token) return C.defaultLevel(scene);
-  if (C.isOutsideBuilding(token.document)) return C.topLevel(scene) ?? C.tokenLevel(token.document);
-  return C.tokenLevel(token.document);
+  return effectiveTokenLevel(token.document);
 }
 
 export function resetGMLevel() {
   gmLevel = null;
+}
+
+/**
+ * Drop the GM manual override so the view derives live from the controlled
+ * token again (floor and roof logic). Called when the GM moves a token.
+ */
+export function followToken() {
+  if (game.user.isGM) gmLevel = null;
+}
+
+/**
+ * Handle token control changes: gaining control makes the GM view follow
+ * that token; releasing the last token freezes the view on the level the
+ * token was viewing, so the map does not jump around.
+ * @param {Token} token
+ * @param {boolean} controlled
+ */
+export function onControlToken(token, controlled) {
+  if (!canvas.ready || !C.isComposite(canvas.scene)) return;
+  if (game.user.isGM) {
+    if (controlled) gmLevel = null;
+    else if (!canvas.tokens.controlled.length) {
+      const lvl = effectiveTokenLevel(token.document);
+      if (C.levelNumbers(canvas.scene).includes(lvl)) gmLevel = lvl;
+    }
+  }
+  refreshView();
 }
 
 export function setGMLevel(level) {

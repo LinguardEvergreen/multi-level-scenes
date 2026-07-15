@@ -2,7 +2,7 @@
   "id": "multi-level-scenes",
   "title": "Multi-Level Scenes",
   "description": "Group scenes from a folder into a single multi-level composite scene. Each floor is identified by a trailing number in the scene name (00, 01, 02...). Includes a stairs rectangle tool to move tokens between floors and a building rectangle so tokens outside see the roof (top floor). / Raggruppa le scene di una cartella in un'unica scena multi-livello con tool per scale ed edificio.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "compatibility": {
     "minimum": "13",
     "verified": "13.351"

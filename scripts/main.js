@@ -1,7 +1,7 @@
 import * as C from "./constants.js";
 import { MLSLayer, refreshOverlay } from "./layer.js";
 import * as view from "./view.js";
-import { maybePromptStairs } from "./stairs.js";
+import { maybePromptStairs, clearStairsState, forgetToken } from "./stairs.js";
 import { openBuilder, buildComposite } from "./builder.js";
 
 /* -------------------------------------------- */
@@ -75,6 +75,7 @@ Hooks.once("ready", async () => {
 Hooks.on("canvasReady", () => {
   view.wrapEdges();
   view.resetGMLevel();
+  clearStairsState();
   refreshOverlay();
   view.refreshView();
 });
@@ -164,12 +165,17 @@ Hooks.on("updateToken", (doc, changes, options, userId) => {
       const level = C.levelFromElevation(doc.parent, doc.elevation);
       if ((level != null) && (level !== C.tokenLevel(doc))) {
         doc.update({ [`flags.${C.MODULE_ID}.level`]: level }, { mlsSync: true });
-        if (game.user.isGM && canvas.ready && (doc.parent === canvas.scene)) view.setGMLevel(level);
+        if (game.user.isGM) view.followToken();
       }
     } else if (levelChanged) {
       const elevation = C.elevationFor(C.tokenLevel(doc));
       if (doc.elevation !== elevation) doc.update({ elevation }, { mlsSync: true });
     }
+  }
+
+  // The GM view follows the token it is moving (floor and roof logic)
+  if (moved && (game.user.id === userId) && game.user.isGM && doc.object?.controlled) {
+    view.followToken();
   }
 
   if (!canvas.ready || (doc.parent !== canvas.scene)) return;
@@ -178,13 +184,16 @@ Hooks.on("updateToken", (doc, changes, options, userId) => {
   if (moved && (game.user.id === userId)) maybePromptStairs(doc);
 });
 
+Hooks.on("deleteToken", doc => {
+  forgetToken(doc.id);
+  if (canvas.ready && (doc.parent === canvas.scene) && C.isComposite(canvas.scene)) view.refreshView();
+});
+
 Hooks.on("createToken", doc => {
   if (canvas.ready && (doc.parent === canvas.scene) && C.isComposite(canvas.scene)) view.refreshView();
 });
 
-Hooks.on("controlToken", () => {
-  if (!game.user.isGM && canvas.ready && C.isComposite(canvas.scene)) view.refreshView();
-});
+Hooks.on("controlToken", (token, controlled) => view.onControlToken(token, controlled));
 
 /* -------------------------------------------- */
 /*  Auto-tag new placeables with current level   */

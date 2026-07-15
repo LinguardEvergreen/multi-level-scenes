@@ -42,13 +42,13 @@ Con la scena composita aperta:
   - **Piano della zona**: la zona si attiva solo per i token su quel piano (così puoi mettere scale diverse su piani diversi), oppure "Tutti i piani" per un'unica tromba delle scale;
   - **Direzione**: solo su, solo giù o entrambe.
 
-  Quando un token ci finisce sopra, al proprietario appare un dialogo **Sali / Scendi / Resta** (sempre, anche se è disponibile una sola direzione). **Tasto destro** su una zona scale per modificarla o eliminarla.
+  Il dialogo **Sali / Scendi / Resta** appare al proprietario appena il token **tocca** la zona (basta una sovrapposizione parziale, non serve il centro), e sempre, anche se è disponibile una sola direzione. Dopo la scelta (incluso "Resta") il dialogo non riappare finché il token non esce del tutto dalla zona e ci rientra; uscire dalla zona non lo fa mai comparire. **Tasto destro** su una zona scale per modificarla o eliminarla.
 - **Area edificio** (icona edificio, rettangolo blu): trascina un rettangolo attorno all'edificio. I token **fuori** da quest'area vedono il **tetto** (l'ultimo piano); i token dentro vedono il piano su cui si trovano. Tasto destro per eliminarla.
 
 ### 4. Vista per GM e giocatori
 
 - **Giocatori**: vedono automaticamente il piano del proprio token (o il tetto se sono fuori dall'edificio). Token, muri, luci e pavimenti degli altri piani sono nascosti.
-- **GM**: cambia piano con le **frecce su/giù** negli strumenti del modulo. I token fuori dall'edificio restano sempre visibili al GM. Quando il GM sposta un token attraverso le scale, la sua vista segue automaticamente il token.
+- **GM**: quando controlla o muove un token, la vista segue quel token — piano e logica del tetto compresi (token fuori dall'edificio → vista sul tetto). Le **frecce su/giù** negli strumenti impostano un piano manuale, che viene rilasciato appena si seleziona o muove di nuovo un token. I token fuori dall'edificio restano sempre visibili al GM.
 - **Elevazione = piano**: cambiare l'elevazione di un token (anche dal HUD del token) lo sposta sul piano corrispondente, e viceversa il cambio piano aggiorna l'elevazione. Con altezza piano 5: elevazione 0–4 → piano 1, 5–9 → piano 2, negativa → piano 0.
 
 ### Impostazioni

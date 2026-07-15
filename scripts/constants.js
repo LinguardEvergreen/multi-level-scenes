@@ -154,6 +154,22 @@ export function rectContains(rect, point) {
 }
 
 /**
+ * The pixel bounds occupied by a token document.
+ * @param {TokenDocument} tokenDoc
+ * @returns {{x: number, y: number, width: number, height: number}}
+ */
+export function tokenBounds(tokenDoc) {
+  const gs = tokenDoc.parent?.grid?.size ?? 100;
+  return { x: tokenDoc.x, y: tokenDoc.y, width: tokenDoc.width * gs, height: tokenDoc.height * gs };
+}
+
+/** Do two rectangles overlap (any intersection at all)? */
+export function rectsOverlap(a, b) {
+  return (a.x < b.x + b.width) && (a.x + a.width > b.x)
+    && (a.y < b.y + b.height) && (a.y + a.height > b.y);
+}
+
+/**
  * Stairs zones. `level` binds the zone to a floor (null = every floor,
  * legacy zones). `direction` is "up", "down" or "both" (default "both").
  * @returns {{id: string, x: number, y: number, width: number, height: number, level: number|null, direction: string}[]}

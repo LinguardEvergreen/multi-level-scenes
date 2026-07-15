@@ -1,10 +1,29 @@
 import * as C from "./constants.js";
-import { setGMLevel } from "./view.js";
+import { followToken } from "./view.js";
 
 /**
- * When a token finishes a movement inside a stairs rectangle, prompt its
- * owner (the client that moved it) with an "up / down / stay" dialog.
- * The dialog is always shown, even when only one direction is available.
+ * Per-client memory of which stairs zone each token currently occupies.
+ * A token is only prompted when it transitions from "outside" to "inside"
+ * a zone: answering "stay" (or anything else) suppresses further prompts
+ * until the token fully leaves the zone and enters it again. Leaving a
+ * zone never prompts.
+ * @type {Map<string, string>} tokenId -> stairs zone id
+ */
+const activeZone = new Map();
+
+export function clearStairsState() {
+  activeZone.clear();
+}
+
+export function forgetToken(tokenId) {
+  activeZone.delete(tokenId);
+}
+
+/**
+ * When a token moves, check the stairs zone it overlaps (any part of the
+ * token counts, not just its center) and prompt its owner with an
+ * "up / down / stay" dialog on zone entry. The dialog is always shown on
+ * entry, even when only one direction is available.
  *
  * A stairs zone may be bound to a level (it only triggers for tokens on
  * that floor) and to a direction: "up", "down" or "both".
@@ -16,12 +35,20 @@ export async function maybePromptStairs(tokenDoc) {
   if (!C.isComposite(scene)) return;
   if (!tokenDoc.isOwner) return;
 
-  const center = C.tokenCenter(tokenDoc);
+  const bounds = C.tokenBounds(tokenDoc);
   const cur = C.tokenLevel(tokenDoc);
   const rect = C.stairsRects(scene).find(r =>
-    C.rectContains(r, center) && ((r.level == null) || (r.level === cur))
+    C.rectsOverlap(bounds, r) && ((r.level == null) || (r.level === cur))
   );
-  if (!rect) return;
+
+  // Outside every zone: clear the memory so the next entry prompts again
+  if (!rect) {
+    activeZone.delete(tokenDoc.id);
+    return;
+  }
+  // Still inside the same zone it was already prompted for: stay silent
+  if (activeZone.get(tokenDoc.id) === rect.id) return;
+  activeZone.set(tokenDoc.id, rect.id);
 
   const nums = C.levelNumbers(scene);
   const direction = rect.direction ?? "both";
@@ -67,8 +94,8 @@ export async function maybePromptStairs(tokenDoc) {
   }, { mlsSync: true });
 
   // The GM view follows the token it just moved through the stairs
-  if (game.user.isGM) setGMLevel(target);
-  else ui.notifications.info(C.locf("MLS.Stairs.Moved", {
+  if (game.user.isGM) followToken();
+  ui.notifications.info(C.locf("MLS.Stairs.Moved", {
     token: tokenDoc.name,
     name: C.levelName(scene, target),
     level: target
