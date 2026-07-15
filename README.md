@@ -44,7 +44,8 @@ Con la scena composita aperta:
 
   Il dialogo **Sali / Scendi / Resta** appare al proprietario appena il token **tocca** la zona (basta una sovrapposizione parziale, non serve il centro), e sempre, anche se è disponibile una sola direzione. Dopo la scelta (incluso "Resta") il dialogo non riappare finché il token non esce del tutto dalla zona e ci rientra; uscire dalla zona non lo fa mai comparire. **Tasto destro** su una zona scale per modificarla o eliminarla.
 - **Area edificio** (icona edificio, rettangolo blu): trascina un rettangolo attorno all'edificio. Per i token **fuori** da quest'area l'immagine del **tetto** (l'ultimo piano) viene disegnata sopra l'area edificio, al di sopra di nebbia e visione — pulita, senza tagli. È un effetto puramente visivo: il token resta a terra e continua a interagire col **proprio piano** (porte d'ingresso visibili e cliccabili, muri del piano terra attivi, esterno esplorabile normalmente). I token trascinati in scena fuori dall'edificio partono sempre dal piano terra. Tasto destro per eliminarla.
-- Le zone (scale ed edificio) sono visibili **solo al GM**: i giocatori non vedono nessun rettangolo.
+- **Area tetto** (icona casa con camino, rettangolo rosso, opzionale): serve per le mappe disegnate **in prospettiva**, dove il tetto nell'immagine dell'ultimo piano appare più grande o spostato rispetto all'impronta a terra dell'edificio. I rettangoli tetto definiscono **dove viene dipinta** l'immagine del tetto (puoi disegnarne più di uno, anche sovrapposti, per seguire la sagoma del tetto), mentre l'area edificio continua a decidere chi è dentro/fuori. Se non ne disegni nessuno, viene usata l'area edificio. Disegnali solo dove c'è davvero il tetto: coprono anche i token che ci passano sotto.
+- Le zone (scale, edificio e tetto) sono visibili **solo al GM**: i giocatori non vedono nessun rettangolo.
 
 ### 4. Vista per GM e giocatori
 

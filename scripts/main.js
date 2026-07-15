@@ -167,9 +167,15 @@ Hooks.on("getSceneControlButtons", controls => {
         title: "MLS.Controls.BuildingTool",
         icon: "fa-regular fa-building"
       },
+      roof: {
+        name: "roof",
+        order: 3,
+        title: "MLS.Controls.RoofTool",
+        icon: "fa-solid fa-house-chimney"
+      },
       levelUp: {
         name: "levelUp",
-        order: 3,
+        order: 4,
         title: "MLS.Controls.LevelUp",
         icon: "fa-solid fa-arrow-up",
         button: true,
@@ -177,7 +183,7 @@ Hooks.on("getSceneControlButtons", controls => {
       },
       levelDown: {
         name: "levelDown",
-        order: 4,
+        order: 5,
         title: "MLS.Controls.LevelDown",
         icon: "fa-solid fa-arrow-down",
         button: true,
@@ -185,7 +191,7 @@ Hooks.on("getSceneControlButtons", controls => {
       },
       build: {
         name: "build",
-        order: 5,
+        order: 6,
         title: "MLS.Controls.Build",
         icon: "fa-solid fa-hammer",
         button: true,

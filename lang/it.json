@@ -4,6 +4,7 @@
       "Title": "Scene Multi-Livello",
       "StairsTool": "Disegna zona scale (trascina un rettangolo)",
       "BuildingTool": "Disegna area edificio (trascina un rettangolo)",
+      "RoofTool": "Disegna area tetto (solo visiva, per mappe in prospettiva)",
       "LevelUp": "Sali di un piano (vista GM)",
       "LevelDown": "Scendi di un piano (vista GM)",
       "Build": "Costruisci scena multi-livello da una cartella"
@@ -11,6 +12,7 @@
     "Layer": {
       "Stairs": "Scale",
       "Building": "Edificio",
+      "Roof": "Tetto",
       "LevelShort": "P{level}",
       "DeleteTitle": "Elimina zona",
       "DeleteContent": "Vuoi eliminare questa zona ({type})?"

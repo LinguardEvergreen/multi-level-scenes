@@ -194,6 +194,19 @@ export function buildingRects(scene) {
 }
 
 /**
+ * Display-only rectangles defining WHERE the roof image is painted. Useful
+ * for maps drawn with perspective, where the roof appears larger / offset
+ * compared to the ground footprint: gameplay (inside/outside) keeps using
+ * the building rectangles, while these clip the roof overlay. Multiple
+ * overlapping rectangles can approximate the roof's shape. When none are
+ * drawn, the building rectangles are used.
+ * @returns {{id: string, x: number, y: number, width: number, height: number}[]}
+ */
+export function roofRects(scene) {
+  return scene?.getFlag(MODULE_ID, "roof") ?? [];
+}
+
+/**
  * Is a token outside every building rectangle?
  * If no building rectangle is defined the whole map counts as "inside"
  * (no roof logic applies).

@@ -3,7 +3,8 @@ import { getViewedLevel, roofModeActive } from "./view.js";
 
 const COLORS = {
   stairs: 0xff9900,
-  building: 0x3399ff
+  building: 0x3399ff,
+  roof: 0xdd4455
 };
 
 const DIRECTION_ARROWS = {
@@ -56,6 +57,10 @@ export function refreshOverlay() {
     o.addChild(makeRect(r, COLORS.building, 0.9, 0.06));
     o.addChild(makeLabel(C.loc("MLS.Layer.Building"), r, COLORS.building));
   }
+  for (const r of C.roofRects(scene)) {
+    o.addChild(makeRect(r, COLORS.roof, 0.9, 0.06));
+    o.addChild(makeLabel(C.loc("MLS.Layer.Roof"), r, COLORS.roof));
+  }
 }
 
 /**
@@ -66,7 +71,9 @@ function drawRoof(overlayContainer, scene) {
   if (!roofModeActive()) return;
   const top = C.topLevel(scene);
   if (top == null) return;
-  const rects = C.buildingRects(scene);
+  // Dedicated roof rectangles (perspective maps) win over the building ones
+  const roofRects = C.roofRects(scene);
+  const rects = roofRects.length ? roofRects : C.buildingRects(scene);
 
   // The roof image comes from the top level's floor tile, whose texture is
   // already loaded even while the tile itself is hidden
@@ -232,12 +239,20 @@ export class MLSLayer extends foundry.canvas.layers.InteractionLayer {
     this.#preview?.clear();
   }
 
+  /** The zone flag key matching the active tool. */
+  get #zoneKey() {
+    const tool = this.#activeTool;
+    if (tool === "building") return "building";
+    if (tool === "roof") return "roof";
+    return "stairs";
+  }
+
   /** @override */
   _onDragLeftMove(event) {
     if (!game.user.isGM || !this.#preview) return;
     const rect = this.#dragRect(event);
     if (!rect) return;
-    const color = this.#activeTool === "building" ? COLORS.building : COLORS.stairs;
+    const color = COLORS[this.#zoneKey];
     const g = this.#preview;
     g.clear();
     g.lineStyle(2, color, 0.8);
@@ -257,7 +272,7 @@ export class MLSLayer extends foundry.canvas.layers.InteractionLayer {
     const rect = this.#dragRect(event);
     if (!rect || rect.width < 10 || rect.height < 10) return;
 
-    const key = this.#activeTool === "building" ? "building" : "stairs";
+    const key = this.#zoneKey;
     const entry = { id: foundry.utils.randomID(), ...rect };
 
     if (key === "stairs") {
@@ -307,19 +322,21 @@ export class MLSLayer extends foundry.canvas.layers.InteractionLayer {
       return;
     }
 
-    // Building zones: delete confirmation
-    const building = scene.getFlag(C.MODULE_ID, "building") ?? [];
-    const buildingHit = [...building].reverse().find(r => C.rectContains(r, pos));
-    if (buildingHit) {
+    // Roof / building zones: delete confirmation
+    for (const [key, labelKey] of [["roof", "MLS.Layer.Roof"], ["building", "MLS.Layer.Building"]]) {
+      const list = scene.getFlag(C.MODULE_ID, key) ?? [];
+      const hit = [...list].reverse().find(r => C.rectContains(r, pos));
+      if (!hit) continue;
       const confirmed = await foundry.applications.api.DialogV2.confirm({
         window: { title: C.loc("MLS.Layer.DeleteTitle") },
-        content: `<p>${C.locf("MLS.Layer.DeleteContent", { type: C.loc("MLS.Layer.Building") })}</p>`,
+        content: `<p>${C.locf("MLS.Layer.DeleteContent", { type: C.loc(labelKey) })}</p>`,
         rejectClose: false,
         modal: true
       });
       if (confirmed) {
-        await scene.setFlag(C.MODULE_ID, "building", building.filter(r => r.id !== buildingHit.id));
+        await scene.setFlag(C.MODULE_ID, key, list.filter(r => r.id !== hit.id));
       }
+      return;
     }
   }
 

@@ -4,6 +4,7 @@
       "Title": "Multi-Level Scenes",
       "StairsTool": "Draw stairs zone (drag a rectangle)",
       "BuildingTool": "Draw building area (drag a rectangle)",
+      "RoofTool": "Draw roof area (display only, for perspective maps)",
       "LevelUp": "View one level up (GM view)",
       "LevelDown": "View one level down (GM view)",
       "Build": "Build a multi-level scene from a folder"
@@ -11,6 +12,7 @@
     "Layer": {
       "Stairs": "Stairs",
       "Building": "Building",
+      "Roof": "Roof",
       "LevelShort": "L{level}",
       "DeleteTitle": "Delete zone",
       "DeleteContent": "Delete this zone ({type})?"
