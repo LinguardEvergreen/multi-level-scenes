@@ -32,22 +32,15 @@ export function primaryToken() {
 }
 
 /**
- * The level a token effectively views: its own floor, or the roof (top
- * level) when it stands outside every building rectangle.
- * @param {TokenDocument} tokenDoc
- * @returns {number}
- */
-export function effectiveTokenLevel(tokenDoc) {
-  if (C.isOutsideBuilding(tokenDoc)) return C.topLevel(tokenDoc.parent) ?? C.tokenLevel(tokenDoc);
-  return C.tokenLevel(tokenDoc);
-}
-
-/**
- * The level currently viewed by this client.
+ * The interaction level of this client: the floor whose walls, doors,
+ * lights and tokens are active. This is always the ACTUAL floor of the
+ * point-of-view token — standing outside the building does NOT change it
+ * (a token outside is on the ground: it sees the roof image, but interacts
+ * with its own floor, entrance doors included).
  *
- * Players follow their token (roof included). The GM follows the token
- * they control — the arrow tools set a manual override, which is cleared
- * again as soon as the GM controls or moves a token.
+ * Players follow their token. The GM follows the token they control — the
+ * arrow tools set a manual override, cleared again as soon as the GM
+ * controls or moves a token.
  * @returns {number|null}
  */
 export function getViewedLevel() {
@@ -56,12 +49,30 @@ export function getViewedLevel() {
   if (game.user.isGM) {
     if (gmLevel != null && C.levelNumbers(scene).includes(gmLevel)) return gmLevel;
     const controlled = canvas.tokens.controlled[0];
-    if (controlled) return effectiveTokenLevel(controlled.document);
+    if (controlled) return C.tokenLevel(controlled.document);
     return C.defaultLevel(scene);
   }
   const token = primaryToken();
   if (!token) return C.defaultLevel(scene);
-  return effectiveTokenLevel(token.document);
+  return C.tokenLevel(token.document);
+}
+
+/**
+ * The level whose floor image (tile) is displayed. Purely visual: when the
+ * point-of-view token stands outside every building rectangle, the roof
+ * (top level) image is shown instead of its own floor — but walls, doors
+ * and everything else keep following {@link getViewedLevel}.
+ * @returns {number|null}
+ */
+export function getDisplayedTileLevel() {
+  const scene = canvas.scene;
+  if (!C.isComposite(scene)) return null;
+  if (game.user.isGM && gmLevel != null && C.levelNumbers(scene).includes(gmLevel)) return gmLevel;
+  const token = game.user.isGM ? canvas.tokens.controlled[0] : primaryToken();
+  if (token && C.isOutsideBuilding(token.document)) {
+    return C.topLevel(scene) ?? getViewedLevel();
+  }
+  return getViewedLevel();
 }
 
 export function resetGMLevel() {
@@ -88,7 +99,7 @@ export function onControlToken(token, controlled) {
   if (game.user.isGM) {
     if (controlled) gmLevel = null;
     else if (!canvas.tokens.controlled.length) {
-      const lvl = effectiveTokenLevel(token.document);
+      const lvl = C.tokenLevel(token.document);
       if (C.levelNumbers(canvas.scene).includes(lvl)) gmLevel = lvl;
     }
   }
@@ -168,8 +179,10 @@ export function docLevelVisible(doc) {
 
 export function enforceTileVisibility(tile) {
   if (!C.isComposite(tile.document.parent)) return;
-  if (tile.document.getFlag(C.MODULE_ID, "level") == null) return;
-  const shown = docLevelVisible(tile.document);
+  const lvl = tile.document.getFlag(C.MODULE_ID, "level");
+  if (lvl == null) return;
+  // Tiles follow the DISPLAYED level (roof logic), unlike walls & doors
+  const shown = lvl === getDisplayedTileLevel();
   if (!shown) {
     tile.visible = false;
     if (tile.mesh) tile.mesh.visible = false;

@@ -111,10 +111,11 @@ export function elevationFor(level) {
 }
 
 /**
- * The floor matching a given elevation: the highest existing level whose
- * base elevation is not above the token's elevation.
- * E.g. with floorHeight 5: elevation 0..4 → level 1, 5..9 → level 2,
- * negative → level 0 (basement).
+ * The floor matching a given elevation, rounding to the NEAREST floor so
+ * that grids stepping elevation by 1.5m (e.g. +4.5 with floor height 5)
+ * still land on the intended level.
+ * E.g. with floorHeight 5: elevation 0..2.4 → level 1, 2.5..7.4 → level 2,
+ * clearly negative → level 0 (basement).
  * @param {Scene} scene
  * @param {number} elevation
  * @returns {number|null}
@@ -123,7 +124,7 @@ export function levelFromElevation(scene, elevation) {
   const nums = levelNumbers(scene);
   if (!nums.length) return null;
   const fh = floorHeight() || 1;
-  const candidate = Math.floor(elevation / fh) + 1;
+  const candidate = Math.round(elevation / fh) + 1;
   let best = nums[0];
   for (const n of nums) {
     if (n <= candidate) best = n;

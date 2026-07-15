@@ -2,32 +2,54 @@ import * as C from "./constants.js";
 import { followToken } from "./view.js";
 
 /**
- * Per-client memory of which stairs zone each token currently occupies.
- * A token is only prompted when it transitions from "outside" to "inside"
- * a zone: answering "stay" (or anything else) suppresses further prompts
- * until the token fully leaves the zone and enters it again. Leaving a
- * zone never prompts.
- * @type {Map<string, string>} tokenId -> stairs zone id
+ * Per-client memory of the stairs zones each token currently overlaps.
+ * The dialog only appears when a token enters a zone it was NOT already
+ * inside (outside → inside transition). Answering the dialog — including
+ * "stay" or closing it — keeps that zone silent until the token fully
+ * leaves it and enters it again. Leaving a zone never prompts.
+ *
+ * After a level change the memory is re-anchored to the zones overlapped
+ * on the NEW floor, so the arrival zone (e.g. the "down" zone at the top
+ * of a stairwell) does not immediately prompt on the next step.
+ *
+ * @type {Map<string, Set<string>>} tokenId -> ids of the zones it occupies
  */
-const activeZone = new Map();
+const occupied = new Map();
 
 export function clearStairsState() {
-  activeZone.clear();
+  occupied.clear();
 }
 
 export function forgetToken(tokenId) {
-  activeZone.delete(tokenId);
+  occupied.delete(tokenId);
 }
 
 /**
- * When a token moves, check the stairs zone it overlaps (any part of the
- * token counts, not just its center) and prompt its owner with an
- * "up / down / stay" dialog on zone entry. The dialog is always shown on
+ * The stairs zones a token currently overlaps on its own floor.
+ * Any overlap counts, not just the token's center.
+ * @param {TokenDocument} tokenDoc
+ * @returns {object[]}
+ */
+function zonesAt(tokenDoc) {
+  const bounds = C.tokenBounds(tokenDoc);
+  const level = C.tokenLevel(tokenDoc);
+  return C.stairsRects(tokenDoc.parent).filter(r =>
+    C.rectsOverlap(bounds, r) && ((r.level == null) || (r.level === level))
+  );
+}
+
+/** Store the zones a token currently occupies (or clear the entry). */
+function anchor(tokenDoc) {
+  const ids = new Set(zonesAt(tokenDoc).map(z => z.id));
+  if (ids.size) occupied.set(tokenDoc.id, ids);
+  else occupied.delete(tokenDoc.id);
+  return ids;
+}
+
+/**
+ * Called when a token moves: prompt its owner with an "up / down / stay"
+ * dialog if it just entered a stairs zone. The dialog is always shown on
  * entry, even when only one direction is available.
- *
- * A stairs zone may be bound to a level (it only triggers for tokens on
- * that floor) and to a direction: "up", "down" or "both".
- *
  * @param {TokenDocument} tokenDoc
  */
 export async function maybePromptStairs(tokenDoc) {
@@ -35,23 +57,17 @@ export async function maybePromptStairs(tokenDoc) {
   if (!C.isComposite(scene)) return;
   if (!tokenDoc.isOwner) return;
 
-  const bounds = C.tokenBounds(tokenDoc);
-  const cur = C.tokenLevel(tokenDoc);
-  const rect = C.stairsRects(scene).find(r =>
-    C.rectsOverlap(bounds, r) && ((r.level == null) || (r.level === cur))
-  );
+  const zones = zonesAt(tokenDoc);
+  const previous = occupied.get(tokenDoc.id) ?? new Set();
+  anchor(tokenDoc);
 
-  // Outside every zone: clear the memory so the next entry prompts again
-  if (!rect) {
-    activeZone.delete(tokenDoc.id);
-    return;
-  }
-  // Still inside the same zone it was already prompted for: stay silent
-  if (activeZone.get(tokenDoc.id) === rect.id) return;
-  activeZone.set(tokenDoc.id, rect.id);
+  // Prompt only for a zone the token was not already inside
+  const entered = zones.find(z => !previous.has(z.id));
+  if (!entered) return;
 
   const nums = C.levelNumbers(scene);
-  const direction = rect.direction ?? "both";
+  const cur = C.tokenLevel(tokenDoc);
+  const direction = entered.direction ?? "both";
   const up = direction !== "down" ? (nums.find(n => n > cur) ?? null) : null;
   const down = direction !== "up" ? ([...nums].reverse().find(n => n < cur) ?? null) : null;
   if (up === null && down === null) return;
@@ -92,6 +108,10 @@ export async function maybePromptStairs(tokenDoc) {
     [`flags.${C.MODULE_ID}.level`]: target,
     elevation: C.elevationFor(target)
   }, { mlsSync: true });
+
+  // Re-anchor on the new floor so the arrival zone stays silent until the
+  // token leaves it and comes back
+  anchor(tokenDoc);
 
   // The GM view follows the token it just moved through the stairs
   if (game.user.isGM) followToken();
